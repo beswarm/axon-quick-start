@@ -1,6 +1,7 @@
 package io.axoniq.labs.chat.commandmodel;
 
 import io.axoniq.labs.chat.coreapi.*;
+import lombok.extern.slf4j.Slf4j;
 import org.axonframework.commandhandling.CommandHandler;
 import org.axonframework.commandhandling.model.AggregateIdentifier;
 import org.axonframework.eventsourcing.EventSourcingHandler;
@@ -13,6 +14,7 @@ import java.util.Set;
 import static org.axonframework.commandhandling.model.AggregateLifecycle.apply;
 
 @Aggregate
+@Slf4j
 public class ChatRoom {
 
     @AggregateIdentifier
@@ -24,11 +26,13 @@ public class ChatRoom {
 
     @CommandHandler
     public ChatRoom(CreateRoomCommand command) {
+        log.info("create room {}, cmd: {}", command.getRoomId(), command);
         apply(new RoomCreatedEvent(command.getRoomId(), command.getName()));
     }
 
     @CommandHandler
     public void handle(JoinRoomCommand command) {
+        log.info("{} join room {}, cmd :{}", command.getParticipant(), command.getRoomId(), command);
         if (!participants.contains(command.getParticipant())) {
             apply(new ParticipantJoinedRoomEvent(command.getParticipant(), roomId));
         }
@@ -36,6 +40,7 @@ public class ChatRoom {
 
     @CommandHandler
     public void handle(LeaveRoomCommand command) {
+        log.info("{} leave room {}, cmd: {}", command.getParticipant(), command.getRoomId(), command);
         if (participants.contains(command.getParticipant())) {
             apply(new ParticipantLeftRoomEvent(command.getParticipant(), roomId));
         }
@@ -43,8 +48,9 @@ public class ChatRoom {
 
     @CommandHandler
     public void handle(PostMessageCommand command) {
+        log.info("{} post message  {}, cmd: {}", command.getParticipant(), command.getMessage(), command);
         Assert.state(participants.contains(command.getParticipant()),
-                     "You cannot post messages unless you've joined the chat room");
+                "You cannot post messages unless you've joined the chat room");
         apply(new MessagePostedEvent(command.getParticipant(), roomId, command.getMessage()));
     }
 

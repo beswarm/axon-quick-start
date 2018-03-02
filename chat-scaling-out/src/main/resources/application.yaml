@@ -1,15 +1,15 @@
 spring:
   application:
-    name: chat-service
-  h2:
-    console:
-      enabled: true
+    name: axon-chat-service
 
   datasource:
-    url: jdbc:h2:tcp://localhost:9092/mem:testdb
-    driver-class-name: org.h2.Driver
-    username: sa
-    data-password:
+    hikari:
+      allow-pool-suspension: false
+      jdbc-url: jdbc:mysql://172.16.0.99:3306/axon?rewriteBatchedStatements\=true&useUnicode=true&characterEncoding=UTF-8&useCursorFetch\=true&zeroDateTimeBehavior=convertToNull
+      username: root
+      password: test@Mysql2017_
+      connection-test-query: select 1+1
+      driver-class-name: com.mysql.jdbc.Driver
   jpa:
     hibernate:
       ddl-auto: update
@@ -17,19 +17,26 @@ eureka:
   client:
     service-url:
       defaultZone: http://peer1:8089/eureka/,http://peer2:8082/eureka/
+  instance:
+    prefer-ip-address: true
 axon:
   distributed:
     enabled: true
-
+    load-factor: 100
+    spring-cloud:
+      fallback-to-http-get: true
+      fallback-url: /message-routing-information
+server:
+  context-path: /
 ---
 spring:
   profiles: peer1
 server:
   port: 8771
 
-
 ---
 spring:
   profiles: peer2
 server:
   port: 8772
+

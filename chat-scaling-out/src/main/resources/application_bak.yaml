@@ -1,0 +1,35 @@
+spring:
+  application:
+    name: chat-service
+  h2:
+    console:
+      enabled: true
+
+  datasource:
+    url: jdbc:h2:tcp://localhost:9092/mem:testdb
+    driver-class-name: org.h2.Driver
+    username: sa
+    data-password:
+  jpa:
+    hibernate:
+      ddl-auto: update
+eureka:
+  client:
+    service-url:
+      defaultZone: http://peer1:8089/eureka/,http://peer2:8082/eureka/
+axon:
+  distributed:
+    enabled: true
+
+---
+spring:
+  profiles: peer1
+server:
+  port: 8771
+
+
+---
+spring:
+  profiles: peer2
+server:
+  port: 8772
