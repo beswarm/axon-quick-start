@@ -1,6 +1,5 @@
 package io.axoniq.labs.chat;
 
-import com.zaxxer.hikari.HikariDataSource;
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -13,7 +12,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
-import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
@@ -28,7 +26,6 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import test.TestControllerImpl;
 import test.TestControllerInterface;
 
-import javax.sql.DataSource;
 import java.sql.SQLException;
 
 @SpringBootApplication
@@ -43,12 +40,12 @@ public class ChatScalingOutApplication {
         SpringApplication.run(ChatScalingOutApplication.class, args);
     }
 
-    @Bean
-    @Primary
-    @ConfigurationProperties(prefix = "spring.datasource.hikari")
-    public DataSource dataSource() {
-        return new HikariDataSource();
-    }
+//    @Bean
+//    @Primary
+//    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+//    public DataSource dataSource() {
+//        return new HikariDataSource();
+//    }
 
 
         @Bean

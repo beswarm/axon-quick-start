@@ -16,7 +16,7 @@ spring:
 eureka:
   client:
     service-url:
-      defaultZone: http://peer1:8089/eureka/,http://peer2:8082/eureka/
+      defaultZone: http://peer1:8089/eureka/,http://peer2:8090/eureka/
 axon:
   distributed:
     enabled: true
