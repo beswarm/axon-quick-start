@@ -1,5 +1,8 @@
 package io.axoniq.labs.chat;
 
+import com.rabbitmq.client.Channel;
+import com.zaxxer.hikari.HikariDataSource;
+import org.axonframework.amqp.eventhandling.spring.SpringAMQPMessageSource;
 import org.axonframework.boot.DistributedCommandBusProperties;
 import org.axonframework.commandhandling.CommandBus;
 import org.axonframework.commandhandling.distributed.RoutingStrategy;
@@ -8,15 +11,20 @@ import org.axonframework.springcloud.commandhandling.SpringCloudHttpBackupComman
 import org.axonframework.springcloud.commandhandling.SpringHttpCommandBusConnector;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.amqp.core.*;
+import org.springframework.amqp.rabbit.annotation.RabbitListener;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
+import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.cloud.client.discovery.DiscoveryClient;
 import org.springframework.cloud.client.discovery.EnableDiscoveryClient;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Primary;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
 import org.springframework.web.client.RestTemplate;
 import springfox.documentation.builders.PathSelectors;
 import springfox.documentation.builders.RequestHandlerSelectors;
@@ -26,6 +34,7 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 import test.TestControllerImpl;
 import test.TestControllerInterface;
 
+import javax.sql.DataSource;
 import java.sql.SQLException;
 
 @SpringBootApplication
@@ -33,6 +42,7 @@ import java.sql.SQLException;
 public class ChatScalingOutApplication {
 
     private static final Logger logger = LoggerFactory.getLogger(ChatScalingOutApplication.class);
+
     @Autowired
     private DistributedCommandBusProperties properties;
 
@@ -40,23 +50,66 @@ public class ChatScalingOutApplication {
         SpringApplication.run(ChatScalingOutApplication.class, args);
     }
 
-//    @Bean
-//    @Primary
-//    @ConfigurationProperties(prefix = "spring.datasource.hikari")
-//    public DataSource dataSource() {
-//        return new HikariDataSource();
-//    }
+    @Autowired
+    public PlatformTransactionManager platformTransactionManager() {
+        return new DataSourceTransactionManager(dataSource());
+    }
+
+    @Bean
+    @Primary
+    @ConfigurationProperties(prefix = "spring.datasource.hikari")
+    public DataSource dataSource() {
+        return new HikariDataSource();
+    }
 
 
-        @Bean
+    @Bean
     public TestControllerInterface instance_will_not_be_treated_as_controller() {
         return new TestControllerImpl();
     }
 
-//    @Bean
+    //    @Bean
     public TestControllerImpl instance_will_be_treated_as_controller() {
         return new TestControllerImpl();
     }
+
+
+//    @Configuration
+//    public static class AmqpConfiguration {
+
+    @Bean
+    public Exchange eventsExchange() {
+        return ExchangeBuilder.fanoutExchange("events").build();
+    }
+
+    @Bean
+    public Queue participantsEventsQueue() {
+        return QueueBuilder.durable("participant-events").build();
+    }
+
+    @Bean
+    public Binding participantsEventsBinding() {
+        return BindingBuilder.bind(participantsEventsQueue()).to(eventsExchange()).with("*").noargs();
+    }
+
+    @Autowired
+    public void configure(AmqpAdmin admin) {
+        admin.declareExchange(eventsExchange());
+        admin.declareQueue(participantsEventsQueue());
+        admin.declareBinding(participantsEventsBinding());
+    }
+
+    @Bean("participantEvents")
+    public SpringAMQPMessageSource participantsEvents(Serializer serializer) {
+        return new SpringAMQPMessageSource(serializer) {
+            @RabbitListener(queues = "participant-events", exclusive = true)
+            @Override
+            public void onMessage(Message message, Channel channel) throws Exception {
+                super.onMessage(message, channel);
+            }
+        };
+    }
+//    }
 
     @Bean
     public SpringHttpCommandBusConnector springHttpCommandBusConnector2(@Qualifier("localSegment") CommandBus localSegment,
